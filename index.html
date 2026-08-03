@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Yields vs Adobe LLM Optimizer | Comparison Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Proxima+Nova:wght@400;600;700&display=swap');
+  
+  :root{
+    --merkle-blue:#040E4B; --gulf-blue:#041677; --klein:#031FA4; --cobalt:#0328D1; --sky-blue:#0391F2;
+    --merkle-red:#7C3AED; --white:#FFFFFF; --black:#000000;
+    --dark-gray:#60607D; --dark-gray-tint:#8888A1; --mid-gray:#AEAEBC; --light-gray:#F2F2F4;
+    --ink:#FFFFFF; --slate:#D6D6DF; --muted:#8888A1; --line:rgba(255,255,255,.15); --bg:#040E4B; --card:#031FA4;
+    --shadow:0 10px 40px rgba(0,0,0,.3); --shadow-sm:0 2px 14px rgba(0,0,0,.2);
+    --r:18px; --good:#0391F2; --warn:#7C3AED; --bad:#7C3AED;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Proxima Nova',Arial,sans-serif;background:var(--bg);color:#fff;
+       -webkit-font-smoothing:antialiased;line-height:1.6}
+  .deck{scroll-snap-type:y mandatory;height:100vh;overflow-y:scroll}
+  section{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;
+          justify-content:center;padding:6vh 8vw;position:relative}
+  .wrap{max-width:1180px;margin:0 auto;width:100%}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#0391F2;margin-bottom:18px}
+  .kicker.light{color:#0391F2}
+  h1{font-size:clamp(34px,5.4vw,68px);font-weight:800;line-height:1.04;letter-spacing:-.02em}
+  h2{font-size:clamp(28px,3.8vw,46px);font-weight:800;line-height:1.08;letter-spacing:-.015em;margin-bottom:18px}
+  .lead{font-size:clamp(17px,1.5vw,21px);font-weight:400;color:#D6D6DF;max-width:820px;line-height:1.6}
+  .label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0391F2}
+  .dark{background:linear-gradient(135deg,#040E4B 0%,#031FA4 50%,#0328D1 100%);color:#fff}
+  .dark .lead{color:rgba(255,255,255,.85)}
+  .dark h1,.dark h2{color:#fff}
+  .dark .kicker.light{color:#0391F2}
+  .accent{background:linear-gradient(135deg,#031FA4 0%,#0328D1 100%);color:#fff}
+  .accent .lead{color:rgba(255,255,255,.88)}
+  .accent h1,.accent h2{color:#fff}
+  .grid{display:grid;gap:22px;margin-top:34px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  .card{background:#031FA4;border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:30px;box-shadow:var(--shadow-sm)}
+  .card h3{font-size:19px;font-weight:700;margin-bottom:8px;color:#fff}
+  .card p{font-size:14.5px;color:#D6D6DF;line-height:1.62}
+  .callout{margin-top:30px;background:rgba(3,31,164,.3);border-left:4px solid #7C3AED;border-radius:12px;padding:20px 26px;font-size:16px;color:#D6D6DF;font-weight:500;line-height:1.6;max-width:940px}
+  .callout b{color:#fff}
+  .callout.accent{background:rgba(3,145,242,.2);border-left-color:#0391F2}
+  .callout.accent b{color:#0391F2}
+  .pill{display:inline-block;font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:99px;background:rgba(3,145,242,.2);color:#0391F2;margin-bottom:22px}
+  .pill.accent{background:rgba(3,145,242,.2);color:#0391F2}
+  .tab-controls{display:flex;gap:12px;margin:30px 0;flex-wrap:wrap}
+  .tab-btn{padding:10px 18px;background:rgba(124,58,237,.15);border:1.5px solid #7C3AED;font-size:14px;font-weight:600;color:#7C3AED;cursor:pointer;border-radius:99px;transition:all .2s ease;position:relative}
+  .tab-btn.active{background:#7C3AED;color:#fff;border-color:#7C3AED}
+  .tab-btn:hover{background:rgba(124,58,237,.25)}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  .comparison-table{width:100%;border-collapse:collapse;font-size:14px}
+  .comparison-table th{background:#031FA4;padding:14px;text-align:left;font-weight:700;color:#fff;border-bottom:2px solid rgba(255,255,255,.15)}
+  .comparison-table td{padding:14px;border-bottom:1px solid rgba(255,255,255,.1);color:#D6D6DF}
+  .comparison-table td:first-child{font-weight:600;color:#fff;max-width:240px}
+  .status-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;font-weight:700;font-size:16px}
+  .status-included{color:#22C55E}.status-roadmap{color:#E8472A}.status-partial{color:#FCD34D}.status-none{color:#E8472A}
+  .comparison-table tr:hover{background:rgba(3,145,242,.1)}
+  .use-case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-top:30px}
+  .use-case-card{background:#031FA4;border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:26px;box-shadow:var(--shadow-sm)}
+  .use-case-card .scenario{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0391F2;margin-bottom:10px}
+  .use-case-card .situation{font-size:15px;font-weight:700;margin-bottom:14px;color:#fff}
+  .use-case-card .rec-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0391F2;margin-top:16px;margin-bottom:6px}
+  .use-case-card .rec-tool{font-size:16px;font-weight:700;color:#0391F2;margin-bottom:10px}
+  .use-case-card .why{font-size:13.5px;color:#D6D6DF;line-height:1.6;margin-bottom:12px}
+  .delivery-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px}
+  .delivery-box{background:#031FA4;border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:30px}
+  .delivery-box h3{font-size:20px;font-weight:800;margin-bottom:4px;color:#fff}
+  .delivery-box .type{font-size:13px;font-weight:700;color:#0391F2;letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px}
+  .delivery-section{margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1)}
+  .delivery-section-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8888A1;margin-bottom:8px}
+  .delivery-section-content{font-size:14px;color:#D6D6DF;line-height:1.6}
+  .contact-card{background:#031FA4;border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:24px;margin-bottom:16px}
+  .contact-name{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
+  .contact-title{font-size:13px;color:#0391F2;margin-bottom:10px}
+  .contact-info{font-size:14px;color:#D6D6DF}
+  .scenario-btn{background:rgba(3,31,164,.3);border:2px solid rgba(3,145,242,.2);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s ease;font-size:13px;font-weight:600;color:#D6D6DF;text-align:left}
+  .scenario-btn:hover{background:rgba(3,31,164,.5);border-color:#0391F2}
+  .scenario-btn.active{background:#031FA4;border-color:#0391F2}
+  .scenario-btn .scenario-num{font-size:11px;text-transform:uppercase;color:#8888A1;margin-bottom:4px}
+  .scenario-btn .scenario-title{font-size:16px;color:#fff}
+  .scenario-content{display:none}
+  .scenario-content.active{display:block}
+  .situation-text{font-size:15px;color:#D6D6DF;line-height:1.6;font-weight:500}
+  .accordion-item{border:1px solid rgba(255,255,255,.1);border-radius:12px;overflow:hidden}
+  .accordion-trigger{background:rgba(3,31,164,.3);border:none;padding:16px;width:100%;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:all .2s ease;color:#fff;font-size:15px;text-align:left}
+  .accordion-trigger:hover{background:rgba(3,31,164,.5)}
+  .accordion-trigger span:last-child{transform:rotate(0deg);transition:transform .3s ease}
+  .accordion-item.open .accordion-trigger span:last-child{transform:rotate(45deg)}
+  .accordion-content{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .accordion-item.open .accordion-content{max-height:500px}
+  .dots{position:fixed;right:22px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:11px;z-index:50}
+  .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.3);border:none;cursor:pointer;padding:0;transition:.2s}
+  .dot.on{background:#0391F2;transform:scale(1.45)}
+  .brandbar{position:fixed;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#040E4B,#0328D1,#0391F2);z-index:60}
+  .pgno{position:fixed;left:22px;bottom:18px;font-size:12px;color:#8888A1;font-weight:600;z-index:50}
+  .logo{font-weight:700;letter-spacing:-.01em;font-size:16px;color:#fff}
+  .logo::before{content:'▶ ';color:#E8472A;margin-right:6px}
+  .dark .logo{color:#fff}
+  .dark .logo::before{color:#E8472A}
+  /* Ensure black text on white backgrounds for accessibility */
+  .white-bg, [style*="background: #fff"], [style*="background: #FFF"], [style*="background: white"],
+  [style*="background-color: #fff"], [style*="background-color: #FFF"], [style*="background-color: white"] {
+    color: #000 !important;
+  }
+  @media(max-width:1024px){.delivery-grid,.use-case-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="brandbar"></div>
+<div class="dots" id="dots"></div>
+<div class="pgno" id="pgno">01 / 09</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 HERO -->
+  <section style="background:linear-gradient(135deg,rgba(0,0,0,.3) 0%,rgba(3,40,209,.3) 100%),url('Merkle-GTM-Macro_Black_001.png') center/cover no-repeat;color:#fff">
+    <div class="wrap">
+      <svg style="margin-bottom:42px;width:140px;height:auto" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639 81">
+        <style type="text/css">.st0{fill:#FFFFFF;}.st1{fill:#E8472A;}</style>
+        <g>
+          <path class="st0" d="M145.7,81h-17V32.9l-25.5,25.8L77.8,32.9V81h-17V0h9l33.6,34.1L136.7,0h9V81z"/>
+          <path class="st1" d="M43.8,36.4H0l43.8,44.4V36.4z"/>
+          <path class="st0" d="M245.6,80.8H168V0h74.3v16.6h-57.2V30h37.6v16.2h-37.6v18.4h60.5V80.8z"/>
+          <path class="st0" d="M350.4,80.8h-19l-20.9-32.9h-27.7v32.9H266V0.4h53.2c7.9,0,14,2,18.8,5.7c5.2,4.2,7.9,10.2,7.9,17.9c0,5.3-1.5,9.9-4.4,14.1c-3.1,4.2-7,7.1-12,8.8L350.4,80.8z M328.6,24c0-2.2-0.7-4-2.2-5.3c-1.5-1.1-4.1-1.8-7.4-1.8h-36.2v14.8H319c3.5,0,5.9-0.7,7.4-2C327.9,27.8,328.6,26,328.6,24z"/>
+          <path class="st0" d="M451.8,80.8h-19.9l-29.5-40.2l-12,10.4v29.8h-17V0.4h17v30l35.2-30h23.6L414.6,30L451.8,80.8z"/>
+          <path class="st0" d="M543.1,80.8h-71.6V0h17v64.6h54.5V80.8z"/>
+          <path class="st0" d="M639,80.8h-77.6V0h74.3v16.6h-57.5V30h37.6v16.2h-37.6v18.4H639V80.8z"/>
+        </g>
+      </svg>
+      <div class="kicker light">Comparison Guide</div>
+      <h1>Yields vs Adobe LLM Optimizer</h1>
+      <p class="lead" style="margin-top:24px">Both tools help brands become visible in AI research moments. Both solve real problems, but they solve different problems in unique ways that compliment one another. Use this guide to understand which tool fits your client's immediate need—and when you need both working together.</p>
+    </div>
+  </section>
+
+  <!-- 2 OVERVIEW -->
+  <section>
+    <div class="wrap">
+      <div class="kicker">At a Glance</div>
+      <h2>Two Tools. Different starting points.</h2>
+      <p class="lead">Merkle's Yields audits, enriches, and optimizes. Adobe LLM Optimizer measures and benchmarks. Most enterprise clients eventually need both, but they solve different problems first.</p>
+      <div class="grid g2" style="margin-top:40px">
+        <div class="card">
+          <div class="label" style="color:#0391F2;margin-bottom:10px">Merkle's Yields</div>
+          <h3>The Service-Orientated Approach</h3>
+          <ul style="margin:0;padding-left:20px;color:#D6D6DF">
+            <li style="margin-bottom:10px">Assess your commerce catalog or content. Identify gaps. Guide enrichment opportunities using Merkle's proprietary technology across multiple LLMs and Google Commerce, specifically.</li>
+            <li style="margin-bottom:10px">Yields' UCP methodology analyzes ecommerce sites for ecommerce agentic readiness, AI measurement, and prompt support. Provides optimizations and workflows.</li>
+            <li style="margin-bottom:10px">White-glove managed service with customer validation at key gates.</li>
+            <li>Merkle handles execution or provides clients with the recipe and files to do it themselves.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="label" style="color:#0391F2;margin-bottom:10px">Adobe LLMO</div>
+          <h3>The Pure Platform Approach</h3>
+          <ul style="margin:0;padding-left:20px;color:#D6D6DF">
+            <li style="margin-bottom:10px">SaaS platform you operate (or an agency operates for you).</li>
+            <li style="margin-bottom:10px">Not specific for ecommerce.</li>
+            <li style="margin-bottom:10px">See your visibility across 8 LLMs. Compare with competitors. Track attribution via real-time dashboards.</li>
+            <li style="margin-bottom:10px">Provides ongoing measurement for AI visibility across multiple LLMs, agentic tracking/actions on the website, and referral analytics.</li>
+            <li>You own the optimization decisions.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:34px">
+        <b>Neither replaces the other.</b> Yields solves "what do we fix?" Adobe LLMO solves "how visible are we?" Most clients that sell products might license both solutions.
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 FEATURE COMPARISON -->
+  <section style="padding-top:144px">
+    <div class="wrap">
+      <div class="kicker">Feature Comparison</div>
+      <h2>Full Feature Grid</h2>
+      <p class="lead" style="margin-bottom:28px">Click through each category to see how the tools compare feature-by-feature. Check marks mean the feature is included today. Purple flags mark roadmap items coming soon. Partial (◐) means the feature is available through integration or partially available. X means the feature is not available.</p>
+      <div class="tab-controls">
+        <button class="tab-btn active" onclick="switchTab(event, 'ecommerce')">eCommerce</button>
+        <button class="tab-btn" onclick="switchTab(event, 'data-structure')">Data Structure</button>
+        <button class="tab-btn" onclick="switchTab(event, 'ai-connectivity')">AI / LLM Connectivity</button>
+        <button class="tab-btn" onclick="switchTab(event, 'integrations')">Integrations</button>
+        <button class="tab-btn" onclick="switchTab(event, 'auditing')">Auditing</button>
+        <button class="tab-btn" onclick="switchTab(event, 'content-guidance')">Content Guidance</button>
+        <button class="tab-btn" onclick="switchTab(event, 'measurement')">Measurement</button>
+        <button class="tab-btn" onclick="switchTab(event, 'reports')">Reports & Deliverables</button>
+        <button class="tab-btn" onclick="switchTab(event, 'search-discovery')">Search & Discovery</button>
+        <button class="tab-btn" onclick="switchTab(event, 'workflow')">Workflow & Automation</button>
+        <button class="tab-btn" onclick="switchTab(event, 'support')">Delivery & Support</button>
+        <button class="tab-btn" onclick="switchTab(event, 'commercials')">Commercials</button>
+      </div>
+
+      <div id="ecommerce" class="tab-content active">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Product catalog readiness assessment</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields core strength. Deep audit of product data quality and completeness.</td>
+          </tr>
+          <tr>
+            <td>Google Merchant Center optimization</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>UCP methodology audits feed compliance and attribute coverage for Google.</td>
+          </tr>
+          <tr>
+            <td>Google Shopping surface readiness</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields assesses products for Google's AI shopping surfaces and surfaces.</td>
+          </tr>
+          <tr>
+            <td>AI shopping agent optimization</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields builds feed readiness for agents. LLMO measures visibility post-publication.</td>
+          </tr>
+          <tr>
+            <td>Feed and schema.org markup assessment</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>LLMO has limited schema.org coverage compared to Yields' comprehensive audit.</td>
+          </tr>
+          <tr>
+            <td>AI-powered attribute generation</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields uses Gemini to enrich catalog descriptions. LLMO is measurement-only.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="data-structure" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Structured data quality assessment</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields provides deep audit. LLMO identifies gaps but lacks comprehensive assessment.</td>
+          </tr>
+          <tr>
+            <td>Schema.org markup validation</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields validates against schema.org standards. LLMO has limited schema coverage.</td>
+          </tr>
+          <tr>
+            <td>JSON-LD and semantic markup support</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields recommends and implements JSON-LD structures for AI readiness.</td>
+          </tr>
+          <tr>
+            <td>FAQ and structured content recommendations</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO surfaces FAQ/schema gaps in Opportunities. Yields includes as enrichment.</td>
+          </tr>
+          <tr>
+            <td>Content type classification and tagging</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields auto-classifies content (product vs editorial vs landing page).</td>
+          </tr>
+          <tr>
+            <td>Metadata optimization guidance</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields recommends title, meta description, and structured data improvements.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="ai-connectivity" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Multi-LLM visibility tracking (ChatGPT, Gemini, Copilot, Claude)</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO tracks mentions across 8+ LLMs. Powered by SEMRush research.</td>
+          </tr>
+          <tr>
+            <td>Mentions by LLM model breakdown</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO shows which models mention your brand and at what frequency.</td>
+          </tr>
+          <tr>
+            <td>Real-time citation and mention detection</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO continuously monitors LLM responses for your brand mentions.</td>
+          </tr>
+          <tr>
+            <td>Agentic traffic monitoring and measurement</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO tracks clicks and interactions from AI agents (GPTBot, Claude, etc.).</td>
+          </tr>
+          <tr>
+            <td>Hallucination risk detection</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-roadmap">✗</span></td>
+            <td>Adobe announced Q4 2026 release for detecting false claims about your brand.</td>
+          </tr>
+          <tr>
+            <td>LLM research surface readiness assessment</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO ensures content is formatted for AI research and citation surfaces.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="integrations" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td style="background:rgba(124,58,237,.15)"><b>SEMRush data integration</b></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td style="background:rgba(124,58,237,.15)"><b>LLMO is "Powered by SEMRush"</b> — all insights leverage SEMRush's data.</td>
+          </tr>
+          <tr>
+            <td>Native Google Analytics integration</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO connects natively to GA4. Yields integrates through analytics platforms.</td>
+          </tr>
+          <tr>
+            <td>Google Search Console integration</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO pulls GSC data for search performance correlation with AI visibility.</td>
+          </tr>
+          <tr>
+            <td>Third-party data source connectors</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields integrates with Firecrawl, SerpAPI, custom data sources. LLMO has limited.</td>
+          </tr>
+          <tr>
+            <td>REST API for custom integration</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-roadmap">✗</span></td>
+            <td>Both have API roadmaps for custom workflow integration.</td>
+          </tr>
+          <tr>
+            <td>CDP and marketing automation integrations</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>LLMO can export data for use in marketing automation platforms.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="auditing" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Baseline readiness audit report</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields' diagnostic phase assesses current state for AI discoverability.</td>
+          </tr>
+          <tr>
+            <td>Competitive audit and benchmarking</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO provides direct competitive visibility comparison. Yields qualitative.</td>
+          </tr>
+          <tr>
+            <td>Brand presence audit across LLMs</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO audits where your brand appears (or doesn't) in each LLM's responses.</td>
+          </tr>
+          <tr>
+            <td>Content discoverability audit (GEO methodology)</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields' GEO audit assesses content structure for AI citation potential.</td>
+          </tr>
+          <tr>
+            <td>URL performance analysis and visibility</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO's URL Inspector shows citation attempts, referral hits per URL.</td>
+          </tr>
+          <tr>
+            <td>Gap identification and opportunity mapping</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>Both identify gaps but in different ways. Yields: content, LLMO: visibility.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="content-guidance" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Content opportunity identification</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO's Opportunities engine (powered by SEMRush) flags specific content gaps.</td>
+          </tr>
+          <tr>
+            <td>Prompt research and topic discovery</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO finds questions people ask about your topic via SEMRush research.</td>
+          </tr>
+          <tr>
+            <td>Related topics and keyword gap analysis</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO surfaces related topics, unique prompts, and content expansion opportunities.</td>
+          </tr>
+          <tr>
+            <td>Query intent classification (Info/Commercial/Transactional)</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO breaks down topics by intent category. SEMRush-powered classification.</td>
+          </tr>
+          <tr>
+            <td>AI-powered content enrichment and generation</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields uses Gemini to auto-generate or enhance content and descriptions.</td>
+          </tr>
+          <tr>
+            <td>Related brands and source domain mapping</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO maps which brands and domains are cited alongside your brand.</td>
+          </tr>
+        </table>
+      </div>
+      <div id="measurement" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Real-time visibility dashboards</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO provides live dashboards. Yields delivers quarterly reports.</td>
+          </tr>
+          <tr>
+            <td>Mentions and citations by market/geography</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO tracks visibility across different markets and regions globally.</td>
+          </tr>
+          <tr>
+            <td>Audience reach estimation</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO estimates monthly audience reached through mentions.</td>
+          </tr>
+          <tr>
+            <td>URL-level citation and traffic metrics</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO's URL Inspector shows per-URL citation attempts and referral hits.</td>
+          </tr>
+          <tr>
+            <td>Referral traffic attribution from LLMs</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO measures actual traffic driven by LLM referrals (ChatGPT, Gemini, etc.).</td>
+          </tr>
+          <tr>
+            <td>Sentiment and brand claims analysis</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO analyzes all claims about your brand (Favorable/Neutral/Unfavorable).</td>
+          </tr>
+        </table>
+      </div>
+
+      
+
+      <div id="reports" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Executive visibility dashboards</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>Both provide dashboards. Yields: quarterly, LLMO: real-time and exportable.</td>
+          </tr>
+          <tr>
+            <td>Custom report generation and export</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO has one-click export. Yields includes custom reporting in service.</td>
+          </tr>
+          <tr>
+            <td>Quarterly optimization reports</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields delivers quarterly strategy updates. LLMO can be scheduled for reporting.</td>
+          </tr>
+          <tr>
+            <td>Automated insight notifications and alerts</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO sends alerts for major visibility changes, claims, or opportunities.</td>
+          </tr>
+          <tr>
+            <td>Data visualization and charting</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>Both provide charts and visualizations. LLMO more granular and real-time.</td>
+          </tr>
+          <tr>
+            <td>Competitive intelligence reports</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO dedicated competitor reports. Yields includes as part of brand research.</td>
+          </tr>
+        </table>
+      </div>
+
+      
+
+
+
+      <div id="search-discovery" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Organic search visibility tracking</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO integrates Google Search Console. Yields tracks via integrations.</td>
+          </tr>
+          <tr>
+            <td>Featured snippet optimization</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields recommends content structure for featured snippet eligibility.</td>
+          </tr>
+          <tr>
+            <td>SERP feature tracking (Google results)</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO tracks your brand's appearance in Google SERP features and positions.</td>
+          </tr>
+          <tr>
+            <td>Knowledge panel optimization</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields ensures brand data for knowledge panels. LLMO measures impact.</td>
+          </tr>
+          <tr>
+            <td>Brand SERP (branded keyword) monitoring</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO monitors what appears when people search your brand name in Google.</td>
+          </tr>
+          <tr>
+            <td>Voice search readiness assessment</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields optimizes for voice search and conversational queries.</td>
+          </tr>
+        </table>
+      </div>
+
+      
+
+      <div id="workflow" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Automated content enrichment workflow</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields has end-to-end automated enrichment pipeline with quality checks.</td>
+          </tr>
+          <tr>
+            <td>Bulk optimization and correction tools</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields can process thousands of items at scale with corrections.</td>
+          </tr>
+          <tr>
+            <td>Opportunity prioritization (ROI-weighted)</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO's Opportunities engine ranks by impact. Yields by business value.</td>
+          </tr>
+          <tr>
+            <td>Automated action recommendations</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO provides specific actions per opportunity. Yields includes in strategy.</td>
+          </tr>
+          <tr>
+            <td>Page-type pattern learning</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields learns URL patterns to auto-classify and optimize content types.</td>
+          </tr>
+          <tr>
+            <td>Multi-tenant data isolation and scaling</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields handles marketplaces and multi-brand at scale. LLMO is single-brand.</td>
+          </tr>
+        </table>
+      </div>
+
+      
+
+      <div id="support" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Managed service with expert support</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields is white-glove service. Commerce and content specialists included.</td>
+          </tr>
+          <tr>
+            <td>Self-serve SaaS platform access</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO sold as SaaS. Full platform access with role-based permissions.</td>
+          </tr>
+          <tr>
+            <td>Professional services and agency support</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields is the professional service. LLMO has agency partner ecosystem.</td>
+          </tr>
+          <tr>
+            <td>Free assessment or trial availability</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>Adobe LLMO has free Chrome plugin. Yields requires engagement discussion.</td>
+          </tr>
+          <tr>
+            <td>Dedicated account management</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields includes dedicated Merkle team. LLMO is self-serve by default.</td>
+          </tr>
+          <tr>
+            <td>Multi-user seat management</td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO supports multiple users per brand. Yields is operator-driven.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="commercials" class="tab-content">
+        <table class="comparison-table">
+          <tr>
+            <th>Feature</th><th>Yields</th><th>Adobe LLMO</th><th>Notes</th>
+          </tr>
+          <tr>
+            <td>Managed service engagement model</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td>Yields: fixed engagement pricing. Includes team, execution, measurement.</td>
+          </tr>
+          <tr>
+            <td>SaaS licensing (per-brand or multi-brand)</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO: monthly/annual SaaS tiers scaled by brand count.</td>
+          </tr>
+          <tr>
+            <td>Free tier or freemium availability</td>
+            <td><span class="status-icon status-none">✗</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>LLMO free Chrome plugin. Yields requires paid engagement.</td>
+          </tr>
+          <tr>
+            <td>Enterprise custom pricing</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>Both available for enterprise contracts. Yields: per-scope, LLMO: per-usage.</td>
+          </tr>
+          <tr>
+            <td>Volume and commitment discounts</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-partial">◐</span></td>
+            <td>Yields discounts for larger scopes. LLMO: volume licensing possible.</td>
+          </tr>
+          <tr>
+            <td>Flexible contract terms and scaling</td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td><span class="status-icon status-included">✓</span></td>
+            <td>Yields: month-to-month or annual, Yields can expand scope. LLMO: month-to-month SaaS.</td>
+          </tr>
+        </table>
+      </div>
+
+
+    </div>
+  </section>
+
+
+
+  <!-- 5 USE CASES -->
+  <section>
+    <div class="wrap">
+      <div class="kicker">Tool selection</div>
+      <h2>Real scenarios. How to determine which tool might be best for specific client use cases.</h2>
+      <p class="lead">Quick reference for matching client situations to the right tool or combination. Review the problem type and internal capability to determine the best starting point.</p>
+      
+      <div style="margin-top:40px;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;color:#D6D6DF;font-size:14px;line-height:1.6">
+          <thead>
+            <tr style="border-bottom:2px solid rgba(255,255,255,.2)">
+              <th style="padding:16px;text-align:left;color:#fff;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase">Industry / GTM Model</th>
+              <th style="padding:16px;text-align:left;color:#fff;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase">Problem Type</th>
+              <th style="padding:16px;text-align:left;color:#fff;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase">Internal Capability</th>
+              <th style="padding:16px;text-align:left;color:#fff;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase">Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(3,31,164,.12)">
+              <td style="padding:16px">Large Retailer</td>
+              <td style="padding:16px">Product data gap</td>
+              <td style="padding:16px">Limited (stretched teams)</td>
+              <td style="padding:16px"><strong>Yields + LLMO</strong><br><span style="font-size:12px">Sequential: Yields first (8-12 weeks), then LLMO for measurement</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.1)">
+              <td style="padding:16px">Large Retailer</td>
+              <td style="padding:16px">Google Commerce slowed sales</td>
+              <td style="padding:16px">Limited (stretched teams)</td>
+              <td style="padding:16px"><strong>Yields + LLMO</strong><br><span style="font-size:12px">Parallel: Diagnose + optimize feed while tracking impact</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(3,31,164,.12)">
+              <td style="padding:16px">Large Retailer</td>
+              <td style="padding:16px">AI shopping invisibility</td>
+              <td style="padding:16px">Limited (stretched teams)</td>
+              <td style="padding:16px"><strong>Yields</strong><br><span style="font-size:12px">Focus on UCP methodology for AI-ready feeds</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.1)">
+              <td style="padding:16px">B2B SaaS</td>
+              <td style="padding:16px">Visibility blind spot (LLM mentions)</td>
+              <td style="padding:16px">Strong (in-house content)</td>
+              <td style="padding:16px"><strong>LLMO</strong><br><span style="font-size:12px">Diagnostic: measure presence across 8 LLMs</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(3,31,164,.12)">
+              <td style="padding:16px">B2B Manufacturer</td>
+              <td style="padding:16px">Systemic data mess</td>
+              <td style="padding:16px">None (technical complexity)</td>
+              <td style="padding:16px"><strong>Yields + LLMO</strong><br><span style="font-size:12px">Parallel: solve data + visibility simultaneously</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.1)">
+              <td style="padding:16px">Healthcare Brand</td>
+              <td style="padding:16px">Misinformation / citation control</td>
+              <td style="padding:16px">Strong (regulatory + content)</td>
+              <td style="padding:16px"><strong>LLMO</strong><br><span style="font-size:12px">Diagnostic: track citation accuracy and source control</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(3,31,164,.12)">
+              <td style="padding:16px">Marketplace</td>
+              <td style="padding:16px">Scale + consistency across sellers</td>
+              <td style="padding:16px">None (multi-tenant complexity)</td>
+              <td style="padding:16px"><strong>Yields at scale + LLMO</strong><br><span style="font-size:12px">Sequential: handle multi-tenant enrichment, then measure</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.1)">
+              <td style="padding:16px">Publishing / SaaS</td>
+              <td style="padding:16px">Citation inconsistency</td>
+              <td style="padding:16px">Partial (content exists, structure gaps)</td>
+              <td style="padding:16px"><strong>Both</strong><br><span style="font-size:12px">Content approach: Yields for structure, LLMO for citation tracking</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 DELIVERY MODELS -->
+  <section>
+    <div class="wrap">
+      <div class="kicker">How They're Delivered</div>
+      <h2>Service vs. Platform: What That Means for Clients</h2>
+      <p class="lead">Yields is delivered as a managed service, existing client value add service, or complimentary pre-sales activity, all of which Merkle handles execution. Adobe LLMO is a self-serve platform you operate directly, but can only use it through a paid SaaS model directly with Adobe. Here's how they differ across five key dimensions.</p>
+      <div class="delivery-grid">
+        <div class="delivery-box">
+          <h3>Yields</h3>
+          <div class="type">Managed Service (White-Glove)</div>
+          
+          <div class="delivery-section">
+            <div class="delivery-section-label">Merkle's Role</div>
+            <div class="delivery-section-content">Facilitate light discovery, setup brand, core catalogue/product to assess in platform, orchestate the automated assessment and execution recommendations, measurement setup, ongoing optimization.</div>
+          </div>
+          
+          <div class="delivery-section">
+            <div class="delivery-section-label">Adobe's Role</div>
+            <div class="delivery-section-content">Refer clients where there is white space, especially those operating substantial commerce capabilities or challenges or right before a large EDS/Commerce migration.</div>
+          </div>
+          
+          <div class="delivery-section">
+            <div class="delivery-section-label">Timeline</div>
+            <div class="delivery-section-content">Diagnostic (1-3 weeks) → Execution (3+ weeks) → Ongoing optimizations from there.</div>
+          </div>
+
+          <div class="delivery-section">
+            <div class="delivery-section-label">Cost Model</div>
+            <div class="delivery-section-content">No cost to assess. Cost to implement corrections (per engagement type).</div>
+          </div>
+
+          <div class="delivery-section">
+            <div class="delivery-section-label">Access</div>
+            <div class="delivery-section-content">Internal Merkle tool only at this time. TBD on client direct access.</div>
+          </div>
+        </div>
+
+        <div class="delivery-box" style="background:#E8472A">
+          <h3>Adobe LLMO</h3>
+          <div class="type" style="color:#fff">SaaS Platform (Self-Serve)</div>
+          
+          <div class="delivery-section">
+            <div class="delivery-section-label" style="color:#fff">Adobe's Role</div>
+            <div class="delivery-section-content">License, demo operate dashboards, maintains infrastructure, adds features, coordinate with Merkle or partner agency for execution.</div>
+          </div>
+          
+          <div class="delivery-section">
+            <div class="delivery-section-label" style="color:#fff">Merkle's Role</div>
+            <div class="delivery-section-content">Support executional needs and guidance with LLMO, especially leading up to major platform shifts or migrations.</div>
+          </div>
+          
+          <div class="delivery-section">
+            <div class="delivery-section-label" style="color:#fff">Timeline</div>
+            <div class="delivery-section-content">Setup (1-4 weeks) → Real-time measurement ongoing. Quarterly reviews recommended.</div>
+          </div>
+
+          <div class="delivery-section">
+            <div class="delivery-section-label" style="color:#fff">Cost Model</div>
+            <div class="delivery-section-content">SaaS licensing (per-brand or multi-brand tiers). Free Chrome plugin for basic assessment.</div>
+          </div>
+
+          <div class="delivery-section">
+            <div class="delivery-section-label" style="color:#fff">Access</div>
+            <div class="delivery-section-content">Direct client or agency dashboard access. Multiple user seats with role-based permissions.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 INTEGRATION SCENARIO -->
+  <section style="background:linear-gradient(135deg,#000000 0%,#0328D1 100%);color:#fff">
+    <div class="wrap">
+      <div class="kicker light">The Compound Approach</div>
+      <h2>How We Can Work Together to Amplify the Right Level of Investments in These Solutions</h2>
+      
+      <div style="margin-top:40px;display:grid;grid-template-columns:2fr 1fr;gap:50px;align-items:start">
+        <!-- LEFT: Compound Approach Content (2/3) -->
+        <div>
+          <p style="font-size:15px;color:rgba(255,255,255,.82);line-height:1.6;margin-bottom:24px">Many of our joint clients are already LLMO customers or exploring it. Yields is a natural strategic add-on that makes their LLMO data richer and their ROI more defensible, especially for those in the commerce business.</p>
+          
+          <p style="font-size:15px;color:rgba(255,255,255,.82);line-height:1.6;margin-bottom:32px">Yields answers "what do we fix and why?" LLMO answers "how much does it matter and when are we winning?" Together they eliminate guesswork from web content and commerce strategy. Here's the typical sequence:</p>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:32px">
+            <div style="padding:24px;background:rgba(34,197,94,.1);border:1px solid #22C55E;border-radius:12px">
+              <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#22C55E;margin-bottom:12px">Month 1</div>
+              <h3 style="font-size:15px;font-weight:700;color:#fff;margin-bottom:12px">Diagnosis + Baseline</h3>
+              <p style="font-size:14px;color:rgba(255,255,255,.8);line-height:1.6">Yields reveal what's missing with detailed reports that are both execution and executive ready to review. LLMO shows the cost of missing it, further enriched by SEMrush insights in SEO. Client approves enrichment strategy with both data points in hand.</p>
+            </div>
+            
+            <div style="padding:24px;background:rgba(3,145,242,.1);border:1px solid #0391F2;border-radius:12px">
+              <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0391F2;margin-bottom:12px">Months 2-6</div>
+              <h3 style="font-size:15px;font-weight:700;color:#fff;margin-bottom:12px">Execution + Real-time Tracking</h3>
+              <p style="font-size:14px;color:rgba(255,255,255,.8);line-height:1.6">As Yields provides enrichment opportunities with ease of integration for application of those enhancements, LLMO dashboards show before/after visibility impact. This becomes your ROI proof for broader expansion.</p>
+            </div>
+            
+            <div style="padding:24px;background:rgba(124,58,237,.1);border:1px solid #7C3AED;border-radius:12px">
+              <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7C3AED;margin-bottom:12px">Months 6+</div>
+              <h3 style="font-size:15px;font-weight:700;color:#fff;margin-bottom:12px">Ongoing Optimization</h3>
+              <p style="font-size:14px;color:rgba(255,255,255,.8);line-height:1.6">LLMO + Yields continue to flag new gaps and enhancements with competitive intelligence. Yields prioritize which gaps to close next quarter. Compounding returns become quantified and defensible.</p>
+            </div>
+          </div>
+          
+          <p style="color:rgba(255,255,255,.9);line-height:1.6">
+            <b style="color:#fff">How Optimization Happens:</b> Depending on whether you're using Merkle managed services to apply the changes or doing it on your own, these tools provide guidance on what to optimize across Site/CMS, Content, Google Commerce, and more.
+          </p>
+        </div>
+
+        <!-- RIGHT: Contact Details (1/3) -->
+        <div style="background:rgba(3,145,242,.12);border:1px solid rgba(3,145,242,.2);border-radius:12px;padding:28px">
+          <div style="display:grid;gap:22px">
+            <div>
+              <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7FA8FF;margin-bottom:16px">Questions? Get in Touch</div>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">Markus Sheldon</div>
+              <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:8px;line-height:1.4">VP / GTM Lead, Digital Product Engineering</div>
+              <div style="font-size:12px;color:rgba(255,255,255,.7)">Yields strategy, commercial structure, Adobe partnerships</div>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">[Contact Name 2]</div>
+              <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:8px;line-height:1.4">[Title]</div>
+              <div style="font-size:12px;color:rgba(255,255,255,.7)">[Specialty / portfolio]</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+function switchTab(event, tabName) {
+  event.preventDefault();
+  
+  // Get all tab content divs
+  const allTabs = document.querySelectorAll('.tab-content');
+  
+  // Hide all tabs
+  for (let tab of allTabs) {
+    tab.classList.remove('active');
+  }
+  
+  // Show the selected tab
+  const activeTab = document.getElementById(tabName);
+  if (activeTab) {
+    activeTab.classList.add('active');
+  }
+  
+  // Update button styles
+  const allButtons = document.querySelectorAll('.tab-btn');
+  for (let btn of allButtons) {
+    btn.classList.remove('active');
+  }
+  
+  // Highlight the clicked button
+  event.currentTarget.classList.add('active');
+}
+
+function switchScenario(event, scenarioId) {
+  event.preventDefault();
+  
+  // Hide all scenario content
+  const allScenarios = document.querySelectorAll('.scenario-content');
+  for (let scenario of allScenarios) {
+    scenario.classList.remove('active');
+  }
+  
+  // Show selected scenario
+  const activeScenario = document.getElementById(scenarioId);
+  if (activeScenario) {
+    activeScenario.classList.add('active');
+  }
+  
+  // Update button styles
+  const allScenarioBtns = document.querySelectorAll('.scenario-btn');
+  for (let btn of allScenarioBtns) {
+    btn.classList.remove('active');
+  }
+  
+  // Highlight clicked button
+  event.currentTarget.classList.add('active');
+}
+
+function toggleAccordion(button) {
+  const accordionItem = button.parentElement;
+  const isOpen = accordionItem.classList.contains('open');
+  
+  // Close all accordion items
+  document.querySelectorAll('.accordion-item').forEach(item => {
+    item.classList.remove('open');
+  });
+  
+  // Open clicked item if it wasn't already open
+  if (!isOpen) {
+    accordionItem.classList.add('open');
+  }
+}
+
+const deck = document.getElementById('deck');
+const sections = Array.from(document.querySelectorAll('section'));
+const dotsContainer = document.getElementById('dots');
+const pgno = document.getElementById('pgno');
+
+sections.forEach((_, i) => {
+  const dot = document.createElement('button');
+  dot.className = 'dot' + (i === 0 ? ' on' : '');
+  dot.onclick = () => sections[i].scrollIntoView({ behavior: 'smooth' });
+  dotsContainer.appendChild(dot);
+});
+
+const dots = Array.from(document.querySelectorAll('.dot'));
+
+deck.addEventListener('scroll', () => {
+  const scrollTop = deck.scrollTop;
+  const current = Math.round(scrollTop / window.innerHeight);
+  dots.forEach((dot, i) => dot.classList.toggle('on', i === current));
+  pgno.textContent = `${String(Math.min(current + 1, sections.length)).padStart(2,'0')} / ${String(sections.length).padStart(2,'0')} · Copyright Merkle, a dentsu company · Last Updated August 2026`;
+});
+</script>
+</body>
+</html>
